@@ -192,6 +192,13 @@ select option{background:#2a2a2e;color:#e0dfd8}
 .sidebar-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15)}
 
 /* Ask Terra BarPath chat panel */
+.ask-toolbar-bar{display:flex;align-items:center;gap:8px;padding:5px 10px;background:linear-gradient(135deg,rgba(110,168,254,.12),rgba(167,139,250,.12));border:1px solid rgba(110,168,254,.3);border-radius:6px;cursor:text;min-width:280px;max-width:380px;flex:1 1 280px;transition:all .15s}
+.ask-toolbar-bar:hover{border-color:rgba(110,168,254,.5);background:linear-gradient(135deg,rgba(110,168,254,.18),rgba(167,139,250,.18))}
+.ask-toolbar-bar:focus-within{border-color:#6ea8fe;box-shadow:0 0 0 2px rgba(110,168,254,.2)}
+.ask-toolbar-bar input{flex:1;background:transparent;border:none;outline:none;color:#e0dfd8;font-family:inherit;font-size:12px;padding:2px 0;min-width:0}
+.ask-toolbar-bar input::placeholder{color:rgba(168,200,255,.55);font-style:italic}
+.ask-toolbar-toggle{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:3px;transition:all .12s}
+.ask-toolbar-toggle:hover{background:rgba(255,255,255,.08);color:#fff}
 .ask-panel{position:fixed;top:0;right:0;bottom:0;width:380px;background:#1e1e22;border-left:1px solid rgba(255,255,255,.08);box-shadow:-4px 0 24px rgba(0,0,0,.3);z-index:400;display:none;flex-direction:column;color:#e0dfd8}
 .ask-panel.visible{display:flex}
 .ask-header{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
@@ -217,11 +224,7 @@ select option{background:#2a2a2e;color:#e0dfd8}
 .ask-send{padding:9px 14px;background:linear-gradient(135deg,#6ea8fe,#a78bfa);border:none;border-radius:8px;color:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:all .15s;font-family:inherit}
 .ask-send:hover{filter:brightness(1.1)}
 .ask-send:disabled{opacity:.5;cursor:not-allowed}
-.ask-key-row{padding:8px 16px;background:rgba(0,0,0,.2);border-bottom:1px solid rgba(255,255,255,.06);font-size:11px;color:rgba(255,255,255,.5)}
-.ask-key-row input{font-family:inherit;font-size:11px;padding:5px 8px;border:1px solid rgba(255,255,255,.12);border-radius:5px;background:rgba(255,255,255,.05);color:#e0dfd8;outline:none;width:100%;margin-top:4px;color-scheme:dark}
-.ask-key-row a{color:#6ea8fe;text-decoration:none}.ask-key-row a:hover{text-decoration:underline}
-/* Print past-overlay fallback class - used during print to render hatch via CSS gradient (more reliable than SVG) */
-.print-past-overlay{position:absolute;top:0;left:0;background-image:repeating-linear-gradient(135deg,transparent 0,transparent 6px,rgba(220,38,38,0.18) 6px,rgba(220,38,38,0.18) 7.5px);pointer-events:none;z-index:2;display:none}
+/* Past-area diagonal hatch is now rendered as explicit SVG <line> elements in the chart body — always prints reliably */
 @media print{
   @page{size:17in 11in landscape;margin:0.4in}
   .sidebar,.toolbar,.popover,.ctx-menu,.pick-overlay,.pick-dot,.pick-line,.ask-panel{display:none!important}
@@ -238,9 +241,6 @@ select option{background:#2a2a2e;color:#e0dfd8}
   svg{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   .bar-rect{border:1.5px solid rgba(0,0,0,.3)!important}
   .year-row,.month-row{-webkit-print-color-adjust:exact!important}
-  /* Show CSS-gradient hatch fallback during print (SVG patterns unreliable in some print engines) */
-  .print-past-overlay{display:block!important}
-  .screen-past-hatch{display:none!important}
 }
 /* Fit-to-page class - applied dynamically when user picks "Fit to One Page" */
 body.print-fit-mode{overflow:hidden}
@@ -258,7 +258,7 @@ body.print-fit-mode .gantt-container{transform-origin:top left}
         <img src="data:image/png;base64,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" alt="Terra" style="height:28px;opacity:.9">
         <span style="font-family:'Segoe UI',sans-serif;font-size:20px;font-weight:300;color:rgba(255,255,255,.75);letter-spacing:-.02em">BarPath</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline"><p style="font-size:10.5px;color:rgba(255,255,255,.35);margin:0">Visual Schedule Builder</p><span style="font-size:9px;color:rgba(255,255,255,.25);letter-spacing:.04em">v.03</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><p style="font-size:10.5px;color:rgba(255,255,255,.35);margin:0">Visual Schedule Builder</p><span style="font-size:9px;color:rgba(255,255,255,.25);letter-spacing:.04em">v.04</span></div>
     </div>
     <div class="sidebar-body">
       <div class="tabs">
@@ -356,7 +356,11 @@ body.print-fit-mode .gantt-container{transform-origin:top left}
       <button class="btn btn-sm" onclick="undo()" title="Undo (Ctrl+Z)">↩ Undo</button>
       <button class="btn btn-sm" onclick="redo()" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
       <div class="toolbar-sep"></div>
-      <button class="btn btn-sm" id="askBpBtn" onclick="toggleAskPanel()" title="Ask Terra BarPath" style="background:linear-gradient(135deg,rgba(110,168,254,.2),rgba(167,139,250,.2));border-color:rgba(110,168,254,.4);color:#a8c8ff"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L9.5 5.5L13 7L9.5 8.5L8 12L6.5 8.5L3 7L6.5 5.5L8 2Z"/><path d="M13 11L13.7 12.5L15 13L13.7 13.5L13 15L12.3 13.5L11 13L12.3 12.5L13 11Z"/></svg> Ask Terra BarPath</button>
+      <div class="ask-toolbar-bar" onclick="focusToolbarSearch()" id="askToolbarBar">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#a8c8ff;flex-shrink:0"><path d="M8 2L9.5 5.5L13 7L9.5 8.5L8 12L6.5 8.5L3 7L6.5 5.5L8 2Z"/><path d="M13 11L13.7 12.5L15 13L13.7 13.5L13 15L12.3 13.5L11 13L12.3 12.5L13 11Z"/></svg>
+        <input type="text" id="askToolbarInput" placeholder="Ask Terra BarPath anything..." onkeydown="askToolbarKey(event)" autocomplete="off">
+        <button class="ask-toolbar-toggle" onclick="event.stopPropagation();toggleAskPanel()" title="Open / minimize chat">▾</button>
+      </div>
       <span class="sel-badge" id="selBadge">❆ <span id="selCount">0</span> selected <button onclick="clearSel()" style="background:none;border:none;color:#6ea8fe;cursor:pointer;font-size:12px;padding:0">✕</button></span>
       <div style="flex:1"></div>
       <label style="font-size:10px;font-weight:600;color:rgba(255,255,255,.45)">Zoom:</label>
@@ -412,11 +416,6 @@ body.print-fit-mode .gantt-container{transform-origin:top left}
     <h3><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#a8c8ff"><path d="M8 2L9.5 5.5L13 7L9.5 8.5L8 12L6.5 8.5L3 7L6.5 5.5L8 2Z"/></svg> Ask Terra BarPath</h3>
     <button class="ask-close" onclick="toggleAskPanel()" title="Close">×</button>
   </div>
-  <div class="ask-key-row" id="askKeyRow">
-    <div>Anthropic API key (saved locally for this session):</div>
-    <input type="password" id="askApiKey" placeholder="sk-ant-..." onchange="saveAskKey()">
-    <div style="margin-top:6px;font-size:10.5px">Get a key at <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></div>
-  </div>
   <div class="ask-messages" id="askMessages">
     <div class="ask-msg assistant">
       Hi — I'm wired into your current schedule. Ask me anything, or tell me to make changes. Examples:
@@ -443,7 +442,7 @@ body.print-fit-mode .gantt-container{transform-origin:top left}
 
 <script>
 let activities=[],nextId=1,dayWidth=4.0,selectedColor='#4ade80',editingId=null;
-let selectedIds=new Set(),_ctrlHeld=false,msEditId=null,_msSnap=null;
+let selectedIds=new Set(),_ctrlHeld=false,msEditId=null,_msSnap=null,_editSnap=null;
 let dataDate=new Date(),ganttMinDate=null;
 let durAnnotations=[];
 let durAnnotNextId=1;
@@ -576,7 +575,7 @@ function submitActivity(){
   }
   if(!a.startDate){showError('Cannot determine start date');return;}
   a.computedStart=new Date(a.startDate);a.computedEnd=computeEndDate(a.startDate,dd);
-  if(editingId){const i=activities.findIndex(x=>x.id===editingId);if(i!==-1)activities[i]=a;msEditId=null;_msSnap=null;cancelEdit();}else{activities.push(a);}
+  if(editingId){const i=activities.findIndex(x=>x.id===editingId);if(i!==-1)activities[i]=a;msEditId=null;_msSnap=null;_editSnap=null;cancelEdit();}else{activities.push(a);}
   recomp();document.getElementById('formError').style.display='none';clearForm();msBarPoints=[];renderMsBarList();updPred();renderGantt();updCount();
 }
 function getCalDays(){const el=document.querySelector('input[name="calDays"]:checked');return el?parseInt(el.value):7;}
@@ -631,8 +630,41 @@ function compStart(p,a){const r=a.relType||'FS',l=a.lag||0;let d;switch(r){case'
 function recomp(){const m={};activities.forEach(a=>{m[a.id]=a;});activities.forEach(a=>{if(a.predecessorId&&m[a.predecessorId]){a.startDate=compStart(m[a.predecessorId],a);a.computedStart=new Date(a.startDate);a.computedEnd=computeEndDate(a.startDate,a.durationDays);}});}
 function showError(m){const e=document.getElementById('formError');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',3000);}
 function clearForm(){['actName','actDuration','actStart'].forEach(id=>document.getElementById(id).value='');document.getElementById('actLag').value='0';document.getElementById('actRow').value='';document.getElementById('actType').value='bar';onTypeChange();document.getElementById('formError').style.display='none';}
-function cancelEdit(){if(msEditId!==null&&_msSnap!==null){var a=activities.find(function(x){return x.id===msEditId;});if(a){a.msBarPoints=JSON.parse(JSON.stringify(_msSnap));var dates=a.msBarPoints.map(function(p){return new Date(p.date+'T00:00:00');}).sort(function(x,y){return x-y;});a.startDate=dates[0];a.computedStart=new Date(dates[0]);a.durationDays=Math.ceil((dates[dates.length-1]-dates[0])/864e5);a.computedEnd=new Date(dates[dates.length-1]);}}editingId=null;msEditId=null;_msSnap=null;document.getElementById('editWrapper').classList.remove('visible');var btn=document.getElementById('submitBtn');btn.textContent='Add Activity';btn.style.background='#2d6a4f';btn.style.borderColor='#1b4332';clearForm();renderGantt();}
-function startEdit(id){const a=activities.find(x=>x.id===id);if(!a)return;editingId=id;msEditId=(a.type==='msbar'?id:null);_msSnap=a.msBarPoints?JSON.parse(JSON.stringify(a.msBarPoints)):null;switchTab('add');document.getElementById('editWrapper').classList.add('visible');document.getElementById('editName').textContent=a.name;const btn=document.getElementById('submitBtn');btn.textContent='Save Changes';btn.style.background='#e97b2d';btn.style.borderColor='#c96820';document.getElementById('actName').value=a.name;document.getElementById('actDuration').value=a.durationRaw||'';document.getElementById('actUnit').value=a.durationUnit||'weeks';document.getElementById('actType').value=a.type;onTypeChange();document.getElementById('actStart').value=a.computedStart?a.computedStart.toISOString().slice(0,10):'';document.getElementById('actPredecessor').value=a.predecessorId||'';document.getElementById('actRelType').value=a.relType||'FS';document.getElementById('actLag').value=a.lag||0;document.getElementById('actStyle').value=a.style||'solid';document.getElementById('actRow').value=a.row!==null&&a.row!==undefined?a.row:'';selectedColor=a.color;document.querySelectorAll('#colorPicker .color-swatch').forEach(s=>{s.classList.toggle('active',rgbHex(s.style.backgroundColor)===a.color);});if(a.msBarPoints){msBarPoints=[...a.msBarPoints];renderMsBarList();}document.getElementById('popover').classList.remove('visible');renderGantt();}
+function cancelEdit(){
+  // Restore the full activity from the snapshot taken at edit start (reverts duration drags, edge resizes, etc.)
+  if(_editSnap&&editingId!==null){
+    var idx=activities.findIndex(function(x){return x.id===editingId;});
+    if(idx!==-1){
+      var snap=_editSnap;
+      var restored={...snap,
+        startDate:snap.startDate?new Date(snap.startDate):null,
+        computedStart:snap.computedStart?new Date(snap.computedStart):null,
+        computedEnd:snap.computedEnd?new Date(snap.computedEnd):null
+      };
+      activities[idx]=restored;
+    }
+  }
+  // Legacy msbar restore (covered by full snapshot above, but kept for safety)
+  if(msEditId!==null&&_msSnap!==null){
+    var a=activities.find(function(x){return x.id===msEditId;});
+    if(a){
+      a.msBarPoints=JSON.parse(JSON.stringify(_msSnap));
+      var dates=a.msBarPoints.map(function(p){return new Date(p.date+'T00:00:00');}).sort(function(x,y){return x-y;});
+      a.startDate=dates[0];a.computedStart=new Date(dates[0]);
+      a.durationDays=Math.ceil((dates[dates.length-1]-dates[0])/864e5);
+      a.computedEnd=new Date(dates[dates.length-1]);
+    }
+  }
+  editingId=null;msEditId=null;_msSnap=null;_editSnap=null;
+  document.getElementById('editWrapper').classList.remove('visible');
+  var btn=document.getElementById('submitBtn');
+  btn.textContent='Add Activity';btn.style.background='#2d6a4f';btn.style.borderColor='#1b4332';
+  clearForm();recomp();renderGantt();
+}
+function startEdit(id){const a=activities.find(x=>x.id===id);if(!a)return;editingId=id;msEditId=(a.type==='msbar'?id:null);_msSnap=a.msBarPoints?JSON.parse(JSON.stringify(a.msBarPoints)):null;
+// Snapshot the full activity so cancel-edit can restore everything (duration, dates, color, edge-resize changes, etc.)
+_editSnap=JSON.parse(JSON.stringify({...a,startDate:a.startDate?a.startDate.toISOString():null,computedStart:a.computedStart?a.computedStart.toISOString():null,computedEnd:a.computedEnd?a.computedEnd.toISOString():null}));
+switchTab('add');document.getElementById('editWrapper').classList.add('visible');document.getElementById('editName').textContent=a.name;const btn=document.getElementById('submitBtn');btn.textContent='Save Changes';btn.style.background='#e97b2d';btn.style.borderColor='#c96820';document.getElementById('actName').value=a.name;document.getElementById('actDuration').value=a.durationRaw||'';document.getElementById('actUnit').value=a.durationUnit||'weeks';document.getElementById('actType').value=a.type;onTypeChange();document.getElementById('actStart').value=a.computedStart?a.computedStart.toISOString().slice(0,10):'';document.getElementById('actPredecessor').value=a.predecessorId||'';document.getElementById('actRelType').value=a.relType||'FS';document.getElementById('actLag').value=a.lag||0;document.getElementById('actStyle').value=a.style||'solid';document.getElementById('actRow').value=a.row!==null&&a.row!==undefined?a.row:'';selectedColor=a.color;document.querySelectorAll('#colorPicker .color-swatch').forEach(s=>{s.classList.toggle('active',rgbHex(s.style.backgroundColor)===a.color);});if(a.msBarPoints){msBarPoints=[...a.msBarPoints];renderMsBarList();}document.getElementById('popover').classList.remove('visible');renderGantt();}
 function rgbHex(rgb){if(rgb.startsWith('#'))return rgb;const m=rgb.match(/(\d+)/g);return m?'#'+m.slice(0,3).map(x=>parseInt(x).toString(16).padStart(2,'0')).join(''):rgb;}
 function updPred(){const s=document.getElementById('actPredecessor'),c=s.value;s.innerHTML='<option value="">None (use start date)</option>';activities.forEach(a=>{s.innerHTML+=`<option value="${a.id}" ${c==a.id?'selected':''}>${a.id}. ${a.name}</option>`;});}
 function updCount(){document.getElementById('actCount').textContent=activities.length?`(${activities.length})`:'';}
@@ -992,8 +1024,24 @@ function renderGantt(){
   if(ddDay>=0&&ddDay<=TD){const ddMo=String(dataDate.getMonth()+1).padStart(2,'0'),ddDy=String(dataDate.getDate()).padStart(2,'0'),ddYr=String(dataDate.getFullYear()).slice(2);ddH=`<div class="data-date-line" style="left:${ddPx}px;top:-54px;height:${ddContentBottom+54}px" onmousedown="startDDDrag(event)"><div class="data-date-label-above">DATA DATE</div><div class="data-date-label-below">(${ddMo}.${ddDy}.${ddYr})</div></div>`;}
   let pastH='';if(ddPx>0){
     const pw=Math.min(ddPx,TW);
-    // SVG version for screen + a CSS-gradient version that only shows during print
-    pastH=`<svg style="position:absolute;top:0;left:0;width:${pw}px;height:${bodyH}px;z-index:2;pointer-events:none" class="screen-past-hatch"><defs><pattern id="pastHatch" patternUnits="userSpaceOnUse" width="14" height="14" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="14" stroke="rgba(220,38,38,0.10)" stroke-width="1.5"/></pattern></defs><rect width="${pw}" height="${bodyH}" fill="url(#pastHatch)"/></svg><div class="print-past-overlay" style="width:${pw}px;height:${bodyH}px"></div>`;
+    // Render explicit diagonal SVG <line> elements - always prints reliably (patterns sometimes don't)
+    // Lines drawn at 45° angle, spaced 14px apart along the perpendicular
+    const spacing=14;
+    const totalDiag=pw+bodyH; // total span needed to cover the rect with diagonal lines
+    let lines='';
+    // Draw lines from top-left to bottom-right diagonal (\\\)
+    // For each anchor point on top edge or right edge, draw line going down-left at 45°
+    for(let off=-bodyH;off<pw;off+=spacing){
+      // Line from (off, 0) to (off+bodyH, bodyH) - 45° diagonal
+      const x1=off,y1=0,x2=off+bodyH,y2=bodyH;
+      // Clip to the rect bounds
+      const cx1=Math.max(0,x1),cy1=cx1>x1?(y1+(cx1-x1)):y1;
+      const cx2=Math.min(pw,x2),cy2=cx2<x2?(y2-(x2-cx2)):y2;
+      if(cy1<bodyH&&cy2>0&&cx1<pw&&cx2>0){
+        lines+=`<line x1="${cx1}" y1="${cy1}" x2="${cx2}" y2="${cy2}" stroke="rgba(220,38,38,0.18)" stroke-width="1.4"/>`;
+      }
+    }
+    pastH=`<svg style="position:absolute;top:0;left:0;width:${pw}px;height:${bodyH}px;z-index:2;pointer-events:none;-webkit-print-color-adjust:exact;print-color-adjust:exact" preserveAspectRatio="none">${lines}</svg>`;
   }
 
   // Duration annotations
@@ -1424,28 +1472,34 @@ durAnnotations=[{id:1,startDay:174,endDay:319,label:'GMP Buyout',yPos:655}];
 durAnnotNextId=2;
 recomp();updPred();renderGantt();renderActivityList();updCount();}
 // ═══ ASK TERRA BARPATH (Claude API chat) ═══
-let askMessages=[]; // conversation history
-let askApiKeyVal='';
+let askMessages=[]; // conversation history (fresh per page load)
 let askInFlight=false;
 
 function toggleAskPanel(){
   const p=document.getElementById('askPanel');
   const open=!p.classList.contains('visible');
   p.classList.toggle('visible',open);
+  // Update toggle chevron direction
+  const tog=document.querySelector('.ask-toolbar-toggle');
+  if(tog)tog.textContent=open?'▴':'▾';
   if(open){
-    // Restore saved key
-    const k=sessionStorage.getItem('terraBpApiKey')||'';
-    askApiKeyVal=k;
-    const ki=document.getElementById('askApiKey');if(ki)ki.value=k;
-    // Hide key row if already entered
-    document.getElementById('askKeyRow').style.display=k?'none':'block';
     setTimeout(()=>document.getElementById('askInput').focus(),50);
   }
 }
-function saveAskKey(){
-  const v=document.getElementById('askApiKey').value.trim();
-  askApiKeyVal=v;
-  if(v){sessionStorage.setItem('terraBpApiKey',v);document.getElementById('askKeyRow').style.display='none';}
+function focusToolbarSearch(){document.getElementById('askToolbarInput').focus();}
+function askToolbarKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    const v=e.target.value.trim();
+    if(!v)return;
+    // Open the side panel and send the message immediately
+    const p=document.getElementById('askPanel');
+    if(!p.classList.contains('visible'))toggleAskPanel();
+    // Move text into panel input and send
+    document.getElementById('askInput').value=v;
+    e.target.value='';
+    setTimeout(()=>askSend(),60);
+  }
 }
 function askPrompt(t){document.getElementById('askInput').value=t;askSend();}
 function askKey(e){
@@ -1525,11 +1579,6 @@ async function askSend(){
   const input=document.getElementById('askInput');
   const text=input.value.trim();
   if(!text)return;
-  if(!askApiKeyVal){
-    document.getElementById('askKeyRow').style.display='block';
-    askAddMessage('error','Please enter your Anthropic API key above to continue.');
-    return;
-  }
   askAddMessage('user',text);
   input.value='';
   askMessages.push({role:'user',content:text});
@@ -1545,14 +1594,10 @@ async function askSend(){
     const ctx=buildScheduleContext();
     const sys=ASK_SYSTEM_PROMPT+'\n\nCURRENT SCHEDULE STATE:\n```json\n'+JSON.stringify(ctx,null,2)+'\n```';
 
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    // Call our Railway proxy (relative path - works on whatever host serves the page)
+    const resp=await fetch('/api/chat',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':askApiKeyVal,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-5',
         max_tokens:2048,
