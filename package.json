@@ -1,0 +1,12 @@
+{
+  "name": "terra-barpath",
+  "version": "0.3.0",
+  "description": "Terra BarPath — Visual schedule builder for early-works construction planning",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
