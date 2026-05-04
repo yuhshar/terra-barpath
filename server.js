@@ -24,12 +24,20 @@ if (!API_KEY) {
 function setCors(res, reqOrigin) {
   // Echo the allowed origin only if it matches (more secure than blanket allow)
   // ALLOWED_ORIGIN can be a comma-separated list for multiple environments (e.g. preview + prod)
-  const allowed = ALLOWED_ORIGIN.split(",").map(s => s.trim());
-  if (reqOrigin && allowed.includes(reqOrigin)) {
-    res.setHeader("Access-Control-Allow-Origin", reqOrigin);
+  const allowed = ALLOWED_ORIGIN.split(",").map(s => s.trim()).filter(Boolean);
+  // Normalize comparison: case-insensitive, strip trailing slashes
+  const normalize = (s) => (s || "").trim().toLowerCase().replace(/\/+$/, "");
+  const reqNorm = normalize(reqOrigin);
+  const matched = allowed.find(a => normalize(a) === reqNorm);
+  if (matched) {
+    res.setHeader("Access-Control-Allow-Origin", matched);
   } else {
+    // Log on mismatch so we can debug from Railway logs
+    if (reqOrigin) {
+      console.log(`CORS mismatch: request origin "${reqOrigin}" not in allow-list [${allowed.join(", ")}]`);
+    }
     // Default to first allowed origin so health checks / direct visits get a sensible header
-    res.setHeader("Access-Control-Allow-Origin", allowed[0]);
+    res.setHeader("Access-Control-Allow-Origin", allowed[0] || "*");
   }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
