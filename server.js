@@ -1,59 +1,37 @@
-// Terra BarPath — Railway proxy server
-// Keeps the Anthropic API key out of the browser by proxying chat requests.
+// Terra BarPath — Railway API proxy
+// Single job: forward chat requests to Anthropic with the API key attached server-side.
+// The HTML frontend is hosted separately on Netlify.
 //
 // Required Railway env var:
 //   ANTHROPIC_API_KEY = sk-ant-...
 //
 // Optional:
-//   ALLOWED_ORIGIN = https://your-frontend.up.railway.app  (defaults to "*" for now)
+//   ALLOWED_ORIGIN = https://terra-barpath.netlify.app  (defaults to that URL)
+//   PORT = (Railway sets this automatically)
 
 const http = require("http");
 const https = require("https");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://terra-barpath.netlify.app";
 
 if (!API_KEY) {
   console.error("FATAL: ANTHROPIC_API_KEY env var is not set.");
   process.exit(1);
 }
 
-// Serve static files from the repo root (so index.html is reachable)
-const fs = require("fs");
-const path = require("path");
-
-const MIME = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "application/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon"
-};
-
-function serveStatic(req, res) {
-  let urlPath = req.url.split("?")[0];
-  if (urlPath === "/") urlPath = "/index.html";
-  const filePath = path.join(__dirname, urlPath);
-  // Prevent path traversal
-  if (!filePath.startsWith(__dirname)) {
-    res.writeHead(403); res.end("Forbidden"); return;
+function setCors(res, reqOrigin) {
+  // Echo the allowed origin only if it matches (more secure than blanket allow)
+  // ALLOWED_ORIGIN can be a comma-separated list for multiple environments (e.g. preview + prod)
+  const allowed = ALLOWED_ORIGIN.split(",").map(s => s.trim());
+  if (reqOrigin && allowed.includes(reqOrigin)) {
+    res.setHeader("Access-Control-Allow-Origin", reqOrigin);
+  } else {
+    // Default to first allowed origin so health checks / direct visits get a sensible header
+    res.setHeader("Access-Control-Allow-Origin", allowed[0]);
   }
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404); res.end("Not found"); return;
-    }
-    const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
-    res.end(data);
-  });
-}
-
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
@@ -63,7 +41,6 @@ function readBody(req) {
     let data = "";
     req.on("data", (chunk) => {
       data += chunk;
-      // Cap body size at ~1 MB to be safe
       if (data.length > 1_000_000) {
         reject(new Error("Body too large"));
         req.destroy();
@@ -100,19 +77,29 @@ function callAnthropic(payload) {
 }
 
 const server = http.createServer(async (req, res) => {
-  setCors(res);
+  const origin = req.headers.origin;
+  setCors(res, origin);
 
+  // Preflight
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
     return;
   }
 
+  // Health check / root visit
+  if (req.method === "GET" && (req.url === "/" || req.url === "/health")) {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", service: "terra-barpath-proxy" }));
+    return;
+  }
+
+  // The one real endpoint
   if (req.method === "POST" && req.url === "/api/chat") {
     try {
       const raw = await readBody(req);
       const payload = JSON.parse(raw || "{}");
-      // Only forward fields we expect — never trust client to set api keys, etc.
+      // Strict allow-list of forwarded fields - never trust the client to set api keys, model overrides, etc.
       const safePayload = {
         model: payload.model || "claude-sonnet-4-5",
         max_tokens: Math.min(payload.max_tokens || 2048, 4096),
@@ -129,16 +116,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Fall through to static file serving
-  if (req.method === "GET") {
-    serveStatic(req, res);
-    return;
-  }
-
-  res.writeHead(404);
-  res.end("Not found");
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Not found" }));
 });
 
 server.listen(PORT, () => {
-  console.log(`Terra BarPath server listening on port ${PORT}`);
+  console.log(`Terra BarPath proxy listening on port ${PORT}`);
+  console.log(`Allowed origin(s): ${ALLOWED_ORIGIN}`);
 });
