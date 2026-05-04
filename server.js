@@ -109,7 +109,7 @@ const server = http.createServer(async (req, res) => {
       const payload = JSON.parse(raw || "{}");
       // Strict allow-list of forwarded fields - never trust the client to set api keys, model overrides, etc.
       const safePayload = {
-        model: payload.model || "claude-sonnet-4-5",
+        model: payload.model || "claude-haiku-4-5",
         max_tokens: Math.min(payload.max_tokens || 2048, 4096),
         system: payload.system,
         messages: payload.messages
