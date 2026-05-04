@@ -49,8 +49,9 @@ function readBody(req) {
     let data = "";
     req.on("data", (chunk) => {
       data += chunk;
-      if (data.length > 1_000_000) {
-        reject(new Error("Body too large"));
+      // Cap body size at ~25 MB to allow vision payloads (PDF pages base64-encoded as images)
+      if (data.length > 25_000_000) {
+        reject(new Error("Body too large (>25MB)"));
         req.destroy();
       }
     });
