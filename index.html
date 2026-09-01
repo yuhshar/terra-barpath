@@ -426,7 +426,6 @@ body.print-fit-mode .gantt-container{transform-origin:top left}
       <button class="btn btn-sm" onclick="importJSON()"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V13H14V7"/><path d="M6 3H2V7H14V3H10"/><path d="M6 3L7 1H9L10 3"/></svg> Open Timeline</button>
       <button class="btn btn-sm" onclick="recoverFromPdf()" title="Recover a schedule from a previously-exported PDF"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2H10L13 5V14H3V2Z"/><path d="M10 2V5H13"/><path d="M6 9L8 11L11 8"/></svg> Recover PDF</button>
       <button class="btn btn-sm" onclick="doPrint()" title="Prints at actual size on Tabloid 11&times;17 Landscape; scales down only if the chart is larger than one sheet.&#10;For a sharp PDF choose 'Save as PDF' as the destination &mdash; avoid PDF printer drivers."><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4V1H12V4"/><rect x="2" y="4" width="12" height="7" rx="1"/><path d="M4 8H12V15H4Z"/></svg> Print</button>
-      </div>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
       <input type="file" id="recoverPdfFile" accept=".pdf" style="display:none" onchange="handleRecoverPdf(event)">
     </div>
