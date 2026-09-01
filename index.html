@@ -283,6 +283,14 @@ select option{background:#2a2a2e;color:#e0dfd8}
   svg{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   .bar-rect{border:1.5px solid rgba(0,0,0,.3)!important}
   .year-row,.month-row{-webkit-print-color-adjust:exact!important}
+  /* v0.9: modest print-only type bump — screen sizes unchanged */
+  .bar-label-below{font-size:11.5px!important}
+  .bar-date-outer{font-size:10.5px!important}
+  .bar-dur-above{font-size:10px!important}
+  .ms-label-below{font-size:11px!important}
+  .ms-date-below,.msbar-mdate{font-size:10px!important}
+  .msbar-mlabel,.msbar-title{font-size:11.5px!important}
+  #terraBpPrintMeta{font-size:2px!important}
 }
 /* Fit-to-page class - applied dynamically when user picks "Fit to One Page" */
 body.print-fit-mode{overflow:hidden}
@@ -1687,16 +1695,20 @@ function togglePrintMenu(e){e.stopPropagation();const dd=document.getElementById
 function doPrint(mode){
   document.getElementById('printDropdown').classList.remove('open');
   const C=document.getElementById('ganttContainer');
-  // Inject a hidden, microscopic-text JSON metadata block at the top of the gantt so PDF text-extractors can recover it
+  // Measure the chart BEFORE injecting the metadata block so fit-to-page scale reflects only real content
+  const _cw=C.scrollWidth,_ch=C.scrollHeight;
+  // Inject a hidden, microscopic-text metadata block so PDF text-extractors can recover the schedule.
+  // v0.9: payload is base64 (no whitespace, so PDF text extraction can't corrupt it) and the block is
+  // as WIDE as the chart, not 1px — the old 1px width forced one character per line, which made the
+  // block thousands of px tall (blank pages, broken fit-to-page) and broke the sentinel on extraction.
   const metaJson=buildExportPayload();
   let metaEl=document.getElementById('terraBpPrintMeta');
   if(metaEl)metaEl.remove();
   metaEl=document.createElement('div');
   metaEl.id='terraBpPrintMeta';
-  // Sentinel marker bracketing the JSON so a parser can locate it in the PDF text dump.
-  // White text + 1px font keeps it invisible to readers but extractable by text-based PDF tools.
-  metaEl.style.cssText='position:absolute;left:0;top:0;width:1px;font-size:1px;color:#fff;line-height:1.1;opacity:.999;white-space:pre-wrap;word-break:break-all;z-index:0;pointer-events:none';
-  metaEl.textContent='<<<TERRA_BARPATH_DATA_BEGIN>>>'+JSON.stringify(metaJson)+'<<<TERRA_BARPATH_DATA_END>>>';
+  metaEl.style.cssText='position:absolute;left:0;right:0;top:0;height:auto;font-size:2px;line-height:1;color:#fff;opacity:.999;white-space:pre-wrap;word-break:break-all;overflow:visible;z-index:0;pointer-events:none;font-family:monospace';
+  const _b64=btoa(unescape(encodeURIComponent(JSON.stringify(metaJson))));
+  metaEl.textContent='<<<TERRA_BARPATH_DATA_BEGIN>>>'+_b64+'<<<TERRA_BARPATH_DATA_END>>>';
   C.appendChild(metaEl);
 
   const cleanup=()=>{
@@ -1708,7 +1720,7 @@ function doPrint(mode){
   if(mode==='fit'&&activities.length){
     // Fit-to-page: compute scale based on 11x17 landscape minus margins (16in x 10.2in usable)
     const pageW=16*96,pageH=10.2*96;
-    const cw=C.scrollWidth,ch=C.scrollHeight;
+    const cw=_cw,ch=_ch;
     const scale=Math.min(pageW/cw,pageH/ch,1);
     document.body.classList.add('print-fit-mode');
     C.style.transform=`scale(${scale})`;
@@ -1793,11 +1805,15 @@ async function handleRecoverPdf(e){
     }
     status.remove();
 
-    // Look for sentinel
-    const m=allText.match(/<<<TERRA_BARPATH_DATA_BEGIN>>>([\s\S]*?)<<<TERRA_BARPATH_DATA_END>>>/);
+    // Look for sentinel. PDF text extraction may insert spaces/newlines anywhere, so search a
+    // whitespace-stripped copy. Payload is base64 (v0.9+); fall back to raw JSON for older exports.
+    const compact=allText.replace(/\s+/g,'');
+    const m=compact.match(/<<<TERRA_BARPATH_DATA_BEGIN>>>([\s\S]*?)<<<TERRA_BARPATH_DATA_END>>>/);
     if(m){
       try{
-        const json=JSON.parse(m[1]);
+        let raw=m[1];
+        if(!/^[\[{]/.test(raw)){raw=decodeURIComponent(escape(atob(raw)));}
+        const json=JSON.parse(raw);
         loadFromImportedJson(json);
         askAddMessage('action','Recovered '+activities.length+' activities from embedded data — instant, lossless restore.');
         return;
