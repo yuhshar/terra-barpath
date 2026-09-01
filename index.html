@@ -425,13 +425,7 @@ body.print-fit-mode .gantt-container{transform-origin:top left}
       <button class="btn btn-sm" onclick="exportJSON()"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 11V13H3V11"/><path d="M3 5V1H10L13 4V5"/><path d="M10 1V4H13"/><rect x="5" y="7" width="6" height="3" rx=".5"/></svg> Save Timeline</button>
       <button class="btn btn-sm" onclick="importJSON()"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V13H14V7"/><path d="M6 3H2V7H14V3H10"/><path d="M6 3L7 1H9L10 3"/></svg> Open Timeline</button>
       <button class="btn btn-sm" onclick="recoverFromPdf()" title="Recover a schedule from a previously-exported PDF"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2H10L13 5V14H3V2Z"/><path d="M10 2V5H13"/><path d="M6 9L8 11L11 8"/></svg> Recover PDF</button>
-      <div class="export-menu" style="position:relative">
-        <button class="btn btn-sm" onclick="togglePrintMenu(event)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4V1H12V4"/><rect x="2" y="4" width="12" height="7" rx="1"/><path d="M4 8H12V15H4Z"/></svg> Print ▾</button>
-        <div class="export-dropdown" id="printDropdown">
-          <button class="export-option" onclick="doPrint('fit')">📄 Fit to One Page</button>
-          <button class="export-option" onclick="doPrint('actual')">📐 Actual Size</button>
-          <div style="font-size:9.5px;line-height:1.4;color:rgba(255,255,255,.45);padding:6px 8px 4px;border-top:1px solid rgba(255,255,255,.08);margin-top:4px;white-space:nowrap">For a sharp PDF, choose <b style="color:rgba(255,255,255,.7)">Save as PDF</b> as the destination,<br>Tabloid&nbsp;11×17, Landscape. Avoid PDF printer drivers.</div>
-        </div>
+      <button class="btn btn-sm" onclick="doPrint()" title="Prints at actual size on Tabloid 11&times;17 Landscape; scales down only if the chart is larger than one sheet.&#10;For a sharp PDF choose 'Save as PDF' as the destination &mdash; avoid PDF printer drivers."><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4V1H12V4"/><rect x="2" y="4" width="12" height="7" rx="1"/><path d="M4 8H12V15H4Z"/></svg> Print</button>
       </div>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
       <input type="file" id="recoverPdfFile" accept=".pdf" style="display:none" onchange="handleRecoverPdf(event)">
@@ -1693,12 +1687,14 @@ function startAnnDrag(e,id){
 
 // ═══ EXPORT/IMPORT ═══
 // ═══ PRINT (Fit / Actual) ═══
-function togglePrintMenu(e){e.stopPropagation();const dd=document.getElementById('printDropdown');const open=dd.classList.toggle('open');if(open){const close=ev=>{if(!ev.target.closest('#printDropdown')&&!ev.target.closest('button[onclick*="togglePrintMenu"]')){dd.classList.remove('open');document.removeEventListener('click',close);}};setTimeout(()=>document.addEventListener('click',close),0);}}
+function togglePrintMenu(e){e.stopPropagation();const dd=document.getElementById('printDropdown');if(!dd)return;const open=dd.classList.toggle('open');if(open){const close=ev=>{if(!ev.target.closest('#printDropdown')&&!ev.target.closest('button[onclick*="togglePrintMenu"]')){dd.classList.remove('open');document.removeEventListener('click',close);}};setTimeout(()=>document.addEventListener('click',close),0);}}
 function doPrint(mode){
-  document.getElementById('printDropdown').classList.remove('open');
   const C=document.getElementById('ganttContainer');
-  // Measure the chart BEFORE injecting the metadata block so fit-to-page scale reflects only real content
-  const _cw=C.scrollWidth,_ch=C.scrollHeight;
+  // Measure the chart BEFORE injecting the metadata block so any scaling reflects only real content.
+  // Width comes from the gantt body (the container is min-width:100% of the viewport, so its
+  // scrollWidth is the screen width, not the chart width).
+  const _body=C.querySelector('.gantt-body');
+  const _cw=_body?_body.offsetWidth:C.scrollWidth,_ch=C.scrollHeight;
   // Inject a hidden, microscopic-text metadata block so PDF text-extractors can recover the schedule.
   // v1.2: payload is base64 (no whitespace, so PDF text extraction can't corrupt it) and the block is
   // as WIDE as the chart, not 1px — the old 1px width forced one character per line, which made the
@@ -1719,17 +1715,14 @@ function doPrint(mode){
     C.style.transform='';
   };
 
-  if(mode==='fit'&&activities.length){
-    // Fit-to-page: compute scale based on 11x17 landscape minus margins (16in x 10.2in usable)
-    const pageW=16*96,pageH=10.2*96;
-    const cw=_cw,ch=_ch;
-    const scale=Math.min(pageW/cw,pageH/ch,1);
+  // v1.2: single print path. Always actual size; scale down ONLY if the chart exceeds one
+  // 11x17 landscape sheet minus margins (16in x 10.2in usable).
+  const pageW=16*96,pageH=10.2*96;
+  const scale=activities.length?Math.min(pageW/_cw,pageH/_ch,1):1;
+  if(scale<0.999){
     document.body.classList.add('print-fit-mode');
     C.style.transform=`scale(${scale})`;
-    setTimeout(()=>{
-      window.print();
-      setTimeout(cleanup,300);
-    },120);
+    setTimeout(()=>{window.print();setTimeout(cleanup,300);},120);
   } else {
     setTimeout(()=>{window.print();setTimeout(cleanup,300);},80);
   }
