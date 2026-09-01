@@ -135,7 +135,7 @@ select option{background:#2a2a2e;color:#e0dfd8}
 .msbar-group{position:absolute;z-index:4}
 .msbar-line{height:2px;background:#333;position:absolute;top:10px}
 .msbar-tick{position:absolute;width:1px;height:20px;background:#333;top:0}
-.msbar-vtick{position:absolute;width:1px;background:#333;transform:translateX(-50%);opacity:.7;pointer-events:none}
+.msbar-vtick{position:absolute;width:1px;background:#333;transform:translateX(-50%);pointer-events:none}
 .msbar-star{position:absolute;font-size:25px;top:-10px;transform:translateX(-50%);cursor:pointer}
 .msbar-mlabel{position:absolute;top:-20px;transform:translateX(-50%);font-size:10.5px;font-weight:700;color:var(--text);white-space:nowrap;text-align:center;text-transform:uppercase;pointer-events:none}
 .msbar-mdate{position:absolute;top:24px;transform:translateX(-50%);font-size:9px;color:#666;white-space:nowrap;pointer-events:none}
@@ -1122,7 +1122,7 @@ function renderGantt(){
       if(_fSym!=='star')ptsH+='<div class="msbar-tick" style="left:0;background:'+_msColor+'"></div>';
       if(_lSym!=='star')ptsH+='<div class="msbar-tick" style="left:'+w+'px;background:'+_msColor+'"></div>';
       // Label collision: if a label would overlap an earlier one at the same level, raise it a level and draw a vertical tick up to it
-      var _LVL=34,_placed=[];
+      var _LVL=30,_placed=[];
       pts.forEach(function(p){
         var px=Math.ceil((p.d-mn)/864e5)*dayWidth-lx,sym=p.symbol||'star',ptPast=p.d<dataDate?0.35:1;
         var oi=a.msBarPoints.findIndex(function(op){return op.label===p.label&&op.date===p.date;});
@@ -1134,7 +1134,8 @@ function renderGantt(){
         var lblTop=-20-lvl*_LVL;
         if(lvl>0){
           // vertical tick from the bar line up to the raised label (rendered before the star so the star sits on top)
-          ptsH+='<div class="msbar-vtick" style="left:'+px+'px;top:'+(lblTop+13)+'px;height:'+(10-(lblTop+13))+'px;opacity:'+ptPast+';background:'+_msColor+'"></div>';
+          var vtTop=lblTop+27; // label (~12px) + date (~11px) + 4px gap
+          ptsH+='<div class="msbar-vtick" style="left:'+px+'px;top:'+vtTop+'px;height:'+(10-vtTop)+'px;opacity:'+(ptPast*0.45)+';background:'+_msColor+'"></div>';
         }
         if(sym==='tick')ptsH+='<div class="msbar-tick" style="left:'+px+'px;opacity:'+ptPast+';'+cur+'background:'+_msColor+'"'+md+'></div>';
         else ptsH+='<div class="msbar-star" style="left:'+px+'px;opacity:'+ptPast+';'+cur+'color:'+_msColor+'"'+md+'>★</div>';
@@ -1219,7 +1220,9 @@ function renderGantt(){
       const lagText=link.lag?(r==='FS'?`${lagSign}${lagAbs} DAY${lagAbs!==1?'S':''} LAG`:`${r}${link.lag>0?'+':''}${link.lag} DAY${lagAbs!==1?'S':''}`):(r!=='FS'?r:null);
       const lagFillOp=bothPast?0.4:0.85;
       // SVG label helper - draws white background pill behind text for readability against grid
+      // v0.9: lag/relationship pills removed from arrows (kept in popover/edit form only)
       const labelAt=(cx,cy)=>{
+        return '';
         if(!lagText)return '';
         const charW=5.2,padX=4,padY=2.5,h=11;
         const w=lagText.length*charW+padX*2;
